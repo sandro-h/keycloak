@@ -19,6 +19,8 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.is4.IS4AdapterTokenVerifier;
+import org.keycloak.adapters.is4.IS4KeycloakDeployment;
 import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
@@ -195,6 +197,12 @@ public class OAuthRequestAuthenticator {
         }
 
         scope = TokenUtil.attachOIDCScope(scope);
+        if (deployment instanceof IS4KeycloakDeployment) {
+            IS4KeycloakDeployment is4Deployment = (IS4KeycloakDeployment) deployment;
+            if (is4Deployment.getExtraScopes() != null && !is4Deployment.getExtraScopes().isEmpty()) {
+                scope += " " + is4Deployment.getExtraScopes();
+            }
+        }
         redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
 
         return redirectUriBuilder.buildAsString();
@@ -358,7 +366,13 @@ public class OAuthRequestAuthenticator {
         }
 
         try {
-            AdapterTokenVerifier.VerifiedTokens tokens = AdapterTokenVerifier.verifyTokens(tokenString, idTokenString, deployment);
+            AdapterTokenVerifier.VerifiedTokens tokens;
+            if (deployment instanceof IS4KeycloakDeployment) {
+                tokens = IS4AdapterTokenVerifier.verifyTokens(tokenString, idTokenString, deployment);
+            }
+            else {
+                tokens = AdapterTokenVerifier.verifyTokens(tokenString, idTokenString, deployment);
+            }
             token = tokens.getAccessToken();
             idToken = tokens.getIdToken();
             log.debug("Token Verification succeeded!");
