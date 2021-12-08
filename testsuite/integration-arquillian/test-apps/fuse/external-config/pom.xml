@@ -21,7 +21,7 @@
     <parent>
         <artifactId>integration-arquillian-test-apps-fuse-parent</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>15.0.2</version>
+        <version>15.0.2-is4</version>
     </parent>
 
     <name>Keycloak Examples - External Config</name>
