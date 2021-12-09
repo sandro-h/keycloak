@@ -28,7 +28,7 @@ public class IS4AdapterTokenVerifier {
 
 		if (idTokenString != null) {
 			// Don't verify signature again on IDToken
-			IDToken idToken = TokenVerifier.create(idTokenString, IDToken.class).getToken();
+			IDToken idToken = TokenVerifier.create(idTokenString, IS4IDToken.class).getToken();
 			TokenVerifier<IDToken> idTokenVerifier = TokenVerifier.createWithoutSignature(idToken);
 
 			// Always verify audience on IDToken

@@ -17,10 +17,18 @@
 
 package org.keycloak.adapters;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Map;
+
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.is4.IS4AccessToken;
 import org.keycloak.adapters.is4.IS4AdapterTokenVerifier;
+import org.keycloak.adapters.is4.IS4IDToken;
 import org.keycloak.adapters.is4.IS4KeycloakDeployment;
+import org.keycloak.adapters.is4.IS4TokenPostProcessor;
 import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
@@ -37,11 +45,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.TokenUtil;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Map;
 
 
 /**
@@ -62,6 +65,7 @@ public class OAuthRequestAuthenticator {
     protected AuthChallenge challenge;
     protected String refreshToken;
     protected String strippedOauthParametersRequestUri;
+    protected IS4TokenPostProcessor tokenPostProcessor;
 
     public OAuthRequestAuthenticator(RequestAuthenticator requestAuthenticator, HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort, AdapterSessionStore tokenStore) {
         this.reqAuthenticator = requestAuthenticator;
@@ -368,7 +372,14 @@ public class OAuthRequestAuthenticator {
         try {
             AdapterTokenVerifier.VerifiedTokens tokens;
             if (deployment instanceof IS4KeycloakDeployment) {
+                IS4KeycloakDeployment is4Deployment = (IS4KeycloakDeployment) deployment;
                 tokens = IS4AdapterTokenVerifier.verifyTokens(tokenString, idTokenString, deployment);
+                ((IS4AccessToken) tokens.getAccessToken()).setTokenString(tokenString);
+                ((IS4IDToken) tokens.getIdToken()).setTokenString(idTokenString);
+
+                if (!postprocessTokens(tokens, is4Deployment)) {
+                    return challenge(403, OIDCAuthenticationError.Reason.CODE_TO_TOKEN_FAILURE, null);
+                }
             }
             else {
                 tokens = AdapterTokenVerifier.verifyTokens(tokenString, idTokenString, deployment);
@@ -389,6 +400,36 @@ public class OAuthRequestAuthenticator {
         }
         log.debug("successful authenticated");
         return null;
+    }
+
+    protected boolean postprocessTokens(AdapterTokenVerifier.VerifiedTokens tokens, IS4KeycloakDeployment is4Deployment) {
+        try {
+            loadPostProcessors(is4Deployment);
+            if (tokenPostProcessor != null) {
+                log.debug("Postprocessing tokens...");
+                tokenPostProcessor.process((IS4AccessToken) tokens.getAccessToken(), (IS4IDToken) tokens.getIdToken());
+            }
+
+            return true;
+        }
+        catch (Exception e) {
+            log.error("failed to post process tokens", e);
+            return false;
+        }
+    }
+
+    protected void loadPostProcessors(IS4KeycloakDeployment is4Deployment) throws IOException {
+        if (is4Deployment.getTokenPostProcessor() != null &&
+                !is4Deployment.getTokenPostProcessor().isEmpty() &&
+                tokenPostProcessor == null) {
+            try {
+                log.debug("Loading token post processor " + is4Deployment.getTokenPostProcessor());
+                tokenPostProcessor = (IS4TokenPostProcessor) this.getClass().getClassLoader()
+                        .loadClass(is4Deployment.getTokenPostProcessor()).newInstance();
+            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                throw new IOException(e);
+            }
+        }
     }
 
     /**

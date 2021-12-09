@@ -6,13 +6,11 @@ package org.keycloak.adapters.is4;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
 
 public class IS4KeycloakDeploymentBuilder extends KeycloakDeploymentBuilder {
@@ -26,6 +24,7 @@ public class IS4KeycloakDeploymentBuilder extends KeycloakDeploymentBuilder {
 		IS4KeycloakDeployment builtDeployment =
 				(IS4KeycloakDeployment) new IS4KeycloakDeploymentBuilder().internalBuild(adapterConfig);
 		builtDeployment.setExtraScopes(adapterConfig.getExtraScopes());
+		builtDeployment.setTokenPostProcessor(adapterConfig.getTokenPostProcessor());
 		return builtDeployment;
 	}
 

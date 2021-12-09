@@ -4,8 +4,6 @@
 
 package org.keycloak.adapters.is4;
 
-import java.util.Set;
-
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -17,6 +15,7 @@ public class IS4KeycloakDeployment extends KeycloakDeployment {
 	private static final Logger log = Logger.getLogger(IS4KeycloakDeployment.class);
 
 	protected String extraScopes;
+	protected String tokenPostProcessor;
 
 	public String getExtraScopes() {
 		return extraScopes;
@@ -24,6 +23,14 @@ public class IS4KeycloakDeployment extends KeycloakDeployment {
 
 	public void setExtraScopes(String extraScopes) {
 		this.extraScopes = extraScopes;
+	}
+
+	public String getTokenPostProcessor() {
+		return tokenPostProcessor;
+	}
+
+	public void setTokenPostProcessor(String tokenPostProcessor) {
+		this.tokenPostProcessor = tokenPostProcessor;
 	}
 
 	@Override

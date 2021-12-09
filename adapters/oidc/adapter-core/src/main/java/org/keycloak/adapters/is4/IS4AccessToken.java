@@ -19,9 +19,8 @@ public class IS4AccessToken extends AccessToken {
 	@JsonProperty("scope")
 	private Set<String> is4Scope;
 
-	public IS4AccessToken() {
-		realmAccess = new Access().roles(new HashSet<>(Collections.singletonList("AIL")));
-	}
+	@JsonIgnore
+	private String tokenString;
 
 	public Set<String> getIs4Scope() {
 		return is4Scope;
@@ -37,6 +36,14 @@ public class IS4AccessToken extends AccessToken {
 	public void setScope(String scope) {
 		super.setScope(scope);
 		this.is4Scope = new HashSet<>(Arrays.asList(scope.split(" ")));
+	}
+
+	public String getTokenString() {
+		return tokenString;
+	}
+
+	public void setTokenString(String tokenString) {
+		this.tokenString = tokenString;
 	}
 
 	private static String join(final Iterable<String> values) {
